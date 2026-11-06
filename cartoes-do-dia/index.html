@@ -1,0 +1,917 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="description" content="Sessões diárias no estilo Glenn Doman com rotina automática, estrelas e figurinhas.">
+<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}[hidden]{display:none!important}img{max-width:100%}</style>
+<title>Cartões do Dia</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Andika:wght@400;700&family=Baloo+2:wght@600;700;800&family=Nunito:wght@400;600;700;800&display=swap">
+<style>
+/* Layout: one-column app, child-facing home on top, full-screen card player, parent area behind a tab. Cards stay white paper in both themes, like printed Doman cards. */
+:root{
+  --bg:#EAF3FB; --surface:#FFFFFF; --surface-2:#F4F8FD; --ink:#1B2742; --muted:#5A6784; --line:#D3DFEC;
+  --accent:#2C67D6; --accent-ink:#FFFFFF; --sun:#F2AE00; --sun-soft:#FFF3CC; --leaf:#24915F; --leaf-soft:#DDF3E8;
+  --warn:#B4540A; --warn-soft:#FFEBD6;
+  --paper:#FFFFFF; --card-red:#D0221B; --card-black:#141414; --card-hi:#2C67D6; --card-shadow:0 10px 30px rgba(27,39,66,.16);
+  --f-display:"Baloo 2","Trebuchet MS",system-ui,sans-serif;
+  --f-body:"Nunito",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-card:"Andika","Nunito",system-ui,sans-serif;
+  --r:18px;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#0E1525; --surface:#172238; --surface-2:#1C2944; --ink:#E7EDF8; --muted:#9BA9C5; --line:#2A3858;
+  --accent:#6E9DFF; --accent-ink:#0E1525; --sun:#FFC63A; --sun-soft:#3A3115; --leaf:#4DC48D; --leaf-soft:#14352A;
+  --warn:#FFB26B; --warn-soft:#3B2716; --card-shadow:0 10px 30px rgba(0,0,0,.45); color-scheme:dark }}
+:root[data-theme="dark"]{
+  --bg:#0E1525; --surface:#172238; --surface-2:#1C2944; --ink:#E7EDF8; --muted:#9BA9C5; --line:#2A3858;
+  --accent:#6E9DFF; --accent-ink:#0E1525; --sun:#FFC63A; --sun-soft:#3A3115; --leaf:#4DC48D; --leaf-soft:#14352A;
+  --warn:#FFB26B; --warn-soft:#3B2716; --card-shadow:0 10px 30px rgba(0,0,0,.45); color-scheme:dark }
+
+*{box-sizing:border-box}
+html,body{min-height:100%}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:16px;line-height:1.5}
+.wrap{max-width:760px;margin:0 auto;padding-block:20px 48px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:18px}
+h1,h2,h3{font-family:var(--f-display);line-height:1.15;margin:0;text-wrap:balance}
+h1{font-size:clamp(1.9rem,6vw,2.6rem);font-weight:800}
+h2{font-size:1.35rem;font-weight:700}
+h3{font-size:1.08rem;font-weight:700}
+p{margin:0}
+.muted{color:var(--muted)}
+.small{font-size:.88rem}
+.eyebrow{font-size:.74rem;letter-spacing:.09em;text-transform:uppercase;font-weight:800;color:var(--muted)}
+button{font:inherit;color:inherit;cursor:pointer}
+button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,.tap:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.btn{border:0;border-radius:999px;padding:12px 20px;font-weight:800;background:var(--surface-2);color:var(--ink);border:1px solid var(--line)}
+.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:transparent}
+.btn.ghost{background:transparent}
+.btn.small{padding:7px 14px;font-size:.88rem}
+.btn:disabled{opacity:.5;cursor:default}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:18px;display:flex;flex-direction:column;gap:12px;min-width:0}
+
+/* top bar */
+.top{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.brand{display:flex;align-items:center;gap:10px;font-family:var(--f-display);font-weight:800;font-size:1.15rem}
+.brand-mark{width:34px;height:34px;border-radius:9px;background:var(--paper);box-shadow:inset 0 0 0 2px var(--line);display:grid;place-items:center;font-family:var(--f-card);font-weight:700;color:var(--card-red);font-size:1.1rem}
+.tabs{display:flex;gap:6px;background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:4px}
+.tabs button{border:0;background:transparent;border-radius:999px;padding:7px 14px;font-weight:800;font-size:.9rem;color:var(--muted)}
+.tabs button[aria-selected="true"]{background:var(--accent);color:var(--accent-ink)}
+
+/* hero */
+.hero{background:var(--surface);border:1px solid var(--line);border-radius:28px;padding:22px;display:grid;grid-template-columns:1fr auto;gap:18px;align-items:center}
+.hero .hello{display:flex;flex-direction:column;gap:6px;min-width:0}
+.starbox{display:flex;flex-direction:column;align-items:center;justify-content:center;background:var(--sun-soft);border-radius:22px;padding:12px 18px;min-width:110px}
+.starbox .n{font-family:var(--f-display);font-weight:800;font-size:2.4rem;line-height:1;color:var(--ink);font-variant-numeric:tabular-nums}
+.starbox .l{font-size:.8rem;font-weight:800;color:var(--muted)}
+.star-ico{width:30px;height:30px;color:var(--sun)}
+.level{display:inline-flex;align-items:center;gap:8px;font-weight:800;font-size:.9rem;background:var(--leaf-soft);color:var(--leaf);border-radius:999px;padding:4px 12px;width:fit-content}
+.lvlbar{height:8px;background:var(--surface-2);border-radius:99px;overflow:hidden;border:1px solid var(--line)}
+.lvlbar i{display:block;height:100%;background:var(--sun);border-radius:99px}
+
+.today{display:flex;flex-direction:column;gap:14px;align-items:stretch}
+.slots{display:flex;gap:12px;flex-wrap:wrap}
+.slot{width:54px;height:54px;border-radius:16px;border:2px dashed var(--line);display:grid;place-items:center;color:var(--muted);font-family:var(--f-display);font-weight:800;font-size:1.2rem}
+.slot.done{border:0;background:var(--sun);color:#3A2A00}
+.slot.done svg{width:30px;height:30px}
+.go{font-family:var(--f-display);font-size:1.45rem;font-weight:800;padding:18px 26px;border-radius:22px;border:0;background:var(--card-red);color:#fff;box-shadow:0 6px 0 #9c1712;transition:transform .1s}
+.go:active{transform:translateY(3px);box-shadow:0 3px 0 #9c1712}
+.go.done{background:var(--leaf);box-shadow:0 6px 0 #17663f}
+
+.acts{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.act{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:14px;text-align:left;display:flex;flex-direction:column;gap:4px}
+.act b{font-family:var(--f-display);font-size:1.08rem}
+.act span{font-size:.84rem;color:var(--muted)}
+.act .glyph{font-family:var(--f-card);font-weight:700;color:var(--card-red);font-size:1.4rem;line-height:1}
+
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.stat{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:12px;display:flex;flex-direction:column;gap:2px}
+.stat .v{font-family:var(--f-display);font-weight:800;font-size:1.6rem;line-height:1.1;font-variant-numeric:tabular-nums}
+.stat .k{font-size:.8rem;color:var(--muted);font-weight:700}
+
+.note{border-radius:14px;padding:12px 14px;font-size:.92rem;display:flex;gap:10px;align-items:flex-start}
+.note.warn{background:var(--warn-soft);color:var(--ink)}
+.note.warn b{color:var(--warn)}
+.note.good{background:var(--leaf-soft)}
+.note.info{background:var(--surface-2);border:1px solid var(--line)}
+
+/* album */
+.album{display:grid;grid-template-columns:repeat(auto-fill,minmax(64px,1fr));gap:10px}
+.stk{aspect-ratio:1;max-width:100%;border-radius:16px;background:var(--surface);border:1px solid var(--line);display:grid;place-items:center;font-size:2rem}
+.stk.lock{background:var(--surface-2);color:var(--muted);font-family:var(--f-display);font-weight:800;font-size:1.1rem;border-style:dashed}
+.stk.new{animation:pop .6s ease}
+@keyframes pop{0%{transform:scale(.4)}70%{transform:scale(1.15)}100%{transform:scale(1)}}
+
+/* forms */
+label.f{display:flex;flex-direction:column;gap:6px;font-weight:700;font-size:.92rem}
+input[type=text],select,textarea{font:inherit;background:var(--surface-2);color:var(--ink);border:1px solid var(--line);border-radius:12px;padding:10px 12px;width:100%}
+textarea{min-height:70px;resize:vertical}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{border:1px solid var(--line);background:var(--surface-2);border-radius:999px;padding:7px 13px;font-weight:700;font-size:.9rem}
+.chip[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);border-color:transparent}
+.seg{display:flex;flex-wrap:wrap;gap:6px}
+.seg button{border:1px solid var(--line);background:var(--surface-2);border-radius:12px;padding:8px 12px;font-weight:700;font-size:.9rem}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:transparent}
+.toggle{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 0;border-bottom:1px solid var(--line)}
+.toggle:last-child{border-bottom:0}
+.toggle span{display:flex;flex-direction:column}
+.toggle small{color:var(--muted);font-weight:600}
+.sw{appearance:none;width:46px;height:28px;border-radius:99px;background:var(--line);position:relative;flex:none;cursor:pointer;transition:background .15s}
+.sw::after{content:"";position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:var(--surface);transition:transform .15s;box-shadow:0 1px 3px rgba(0,0,0,.25)}
+.sw:checked{background:var(--leaf)}
+.sw:checked::after{transform:translateX(18px)}
+
+/* calendar */
+.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:5px}
+.cal .d{aspect-ratio:1;max-width:100%;border-radius:8px;background:var(--surface-2);border:1px solid var(--line);display:grid;place-items:center;font-size:.72rem;font-weight:800;color:var(--muted);font-variant-numeric:tabular-nums}
+.cal .d.l1{background:color-mix(in srgb,var(--sun) 35%,var(--surface));color:var(--ink)}
+.cal .d.l2{background:color-mix(in srgb,var(--sun) 65%,var(--surface));color:var(--ink)}
+.cal .d.l3{background:var(--sun);color:#3A2A00;border-color:transparent}
+.cal .d.today{outline:2px solid var(--accent);outline-offset:1px}
+.cal .h{font-size:.7rem;text-align:center;color:var(--muted);font-weight:800}
+.words{display:flex;flex-wrap:wrap;gap:6px}
+.w{font-family:var(--f-card);font-weight:700;font-size:.92rem;border-radius:8px;padding:3px 9px;background:var(--surface-2);border:1px solid var(--line)}
+.w.on{border-color:var(--card-red);color:var(--card-red);background:var(--paper)}
+.w.ret{background:var(--leaf-soft);color:var(--leaf);border-color:transparent}
+.tbl{width:100%;border-collapse:collapse;font-size:.88rem}
+.tbl th,.tbl td{padding:7px 6px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+.tbl th{font-size:.74rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.scroll{overflow-x:auto}
+.guide{display:flex;flex-direction:column;gap:10px}
+.linkbtn{border:0;background:none;padding:0;color:var(--accent);font-weight:800;text-decoration:underline;text-underline-offset:2px}
+.days{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,300px),1fr));gap:12px}
+.day{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:14px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.day.is-today{border:2px solid var(--accent)}
+.day header{display:flex;flex-wrap:wrap;align-items:baseline;gap:8px}
+.day .dn{font-family:var(--f-display);font-weight:800;font-size:1.15rem}
+.day .dd{color:var(--muted);font-weight:700;font-size:.88rem}
+.day .tm{margin-left:auto;font-size:.78rem;font-weight:800;background:var(--sun-soft);border-radius:99px;padding:2px 10px}
+.day dl{margin:0;display:flex;flex-direction:column;gap:6px}
+.day dl div{display:grid;grid-template-columns:70px 1fr;gap:8px;align-items:start}
+.day dt{font-size:.72rem;text-transform:uppercase;letter-spacing:.06em;font-weight:800;color:var(--muted);padding-top:4px}
+.day dd{margin:0;display:flex;flex-wrap:wrap;gap:4px;font-size:.9rem;min-width:0}
+.guide ul{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:6px}
+
+/* player */
+.player{position:fixed;inset:0;z-index:50;background:var(--bg);display:flex;flex-direction:column;padding-top:max(10px,env(safe-area-inset-top,0px));padding-bottom:max(12px,env(safe-area-inset-bottom,0px));padding-left:max(12px,env(safe-area-inset-left,0px));padding-right:max(12px,env(safe-area-inset-right,0px));gap:10px}
+.pbar{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.pbar .lbl{font-family:var(--f-display);font-weight:800;font-size:1.05rem;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dots{display:flex;gap:5px;flex-wrap:wrap;justify-content:center}
+.dots i{width:9px;height:9px;border-radius:50%;background:var(--line)}
+.dots i.on{background:var(--accent)}
+.stage{flex:1;display:flex;align-items:center;justify-content:center;min-height:0}
+.card{background:var(--paper);border-radius:22px;box-shadow:var(--card-shadow);width:min(100%,1100px);height:min(100%,calc(min(100vw,1100px) * .62));container-type:size;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;cursor:pointer;user-select:none;-webkit-user-select:none}
+.card .word{font-family:var(--f-card);font-weight:700;line-height:1;color:var(--card-red);font-size:min(calc(118cqw / var(--len)),42cqh);white-space:nowrap;letter-spacing:.01em}
+.card.black .word,.card.black .txt{color:var(--card-black)}
+.card .txt{font-family:var(--f-card);font-weight:700;line-height:1.12;color:var(--card-red);text-align:center;padding:0 5cqw;font-size:clamp(6cqh,calc(210cqw / var(--len)),20cqh)}
+.card .word .hi{color:var(--card-hi);text-decoration:underline;text-decoration-thickness:.06em;text-underline-offset:.08em}
+.card svg.dots-svg{width:94%;height:90%}
+.card .bit{display:flex;flex-direction:column;align-items:center;gap:2cqh;padding:3cqh 5cqw;text-align:center;color:#1B2742}
+.card .bit .em{font-size:34cqh;line-height:1}
+.card .bit .nm{font-family:var(--f-card);font-weight:700;color:var(--card-red);font-size:min(calc(110cqw / var(--len)),16cqh);line-height:1}
+.card .bit ul{margin:0;padding:0;list-style:none;font-family:var(--f-body);font-weight:700;font-size:4.6cqh;color:#3a4561;display:flex;flex-direction:column;gap:.6cqh}
+.card .eq{display:flex;align-items:center;justify-content:center;gap:2cqw;width:100%;height:100%;padding:0 2cqw}
+.card .eq .box{flex:1;height:70%;border:2px dashed #E6D3D2;border-radius:14px;display:flex;align-items:center;justify-content:center}
+.card .eq .box svg{width:100%;height:100%}
+.card .eq .op{font-family:var(--f-card);font-weight:700;color:#1B2742;font-size:14cqh}
+.card .instr{display:flex;flex-direction:column;align-items:center;gap:3cqh;text-align:center;padding:4cqh 6cqw;color:#1B2742}
+.card .instr .big{font-family:var(--f-display);font-weight:800;font-size:9cqh;line-height:1.1}
+.card .instr .sub{font-size:4.6cqh;font-weight:700;color:#4a5677;max-width:80cqw}
+.card .instr .mini{width:40cqw;height:28cqh}
+.card .book{display:flex;flex-direction:column;align-items:center;gap:3cqh;padding:4cqh 7cqw;text-align:center}
+.card .book .pg{font-size:4cqh;font-weight:800;color:#8a93a8;letter-spacing:.08em;text-transform:uppercase}
+.card .book .bt{font-family:var(--f-card);font-weight:700;color:#141414;font-size:clamp(7cqh,calc(190cqw / var(--len)),15cqh);line-height:1.2}
+.card .book.title .bt{color:var(--card-red)}
+.card .tag{position:absolute;top:3cqh;left:3cqw;font-family:var(--f-body);font-weight:800;font-size:3.6cqh;padding:.6cqh 2cqw;border-radius:99px;background:#FFF3CC;color:#6A4B00}
+.hint{min-height:64px;display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap;text-align:center}
+.hint .say{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:8px 14px;font-weight:700;font-size:.95rem;max-width:640px}
+.hint .say b{color:var(--accent)}
+.next{font-family:var(--f-display);font-weight:800;font-size:1.1rem;padding:12px 26px;border-radius:16px;border:0;background:var(--accent);color:var(--accent-ink)}
+.prog{height:6px;background:var(--line);border-radius:99px;overflow:hidden}
+.prog i{display:block;height:100%;background:var(--accent);transition:width .25s}
+
+/* end screen */
+.end{display:flex;flex-direction:column;align-items:center;gap:18px;text-align:center;padding:10px 0}
+.burst{position:relative;width:160px;height:160px;display:grid;place-items:center}
+.burst .core{font-family:var(--f-display);font-weight:800;font-size:2.8rem;color:#3A2A00;background:var(--sun);width:120px;height:120px;border-radius:50%;display:grid;place-items:center;z-index:1}
+.burst span{position:absolute;width:22px;height:22px;color:var(--sun);animation:fly 1s ease-out forwards}
+@keyframes fly{from{transform:translate(0,0) scale(.3);opacity:1}to{transform:translate(var(--x),var(--y)) scale(1);opacity:0}}
+.faces{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+.face{border:2px solid var(--line);background:var(--surface);border-radius:16px;padding:8px 10px;display:flex;flex-direction:column;align-items:center;gap:2px;min-width:68px}
+.face .e{font-size:1.8rem;line-height:1}
+.face small{font-weight:800;font-size:.75rem;color:var(--muted)}
+.face[aria-pressed="true"]{border-color:var(--accent);background:var(--surface-2)}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 18px;border-radius:999px;font-weight:800;z-index:80;max-width:calc(100% - 32px);text-align:center}
+.sync{display:inline-flex;align-items:center;gap:6px;font-size:.8rem;font-weight:700;color:var(--muted)}
+.sync i{width:8px;height:8px;border-radius:50%;background:var(--muted)}
+.sync.ok i{background:var(--leaf)}
+.danger{color:var(--warn)}
+
+@media (max-width:520px){
+  .hero{grid-template-columns:1fr}
+  .starbox{flex-direction:row;gap:10px;justify-content:flex-start}
+  .stats{grid-template-columns:repeat(3,1fr)}
+  .stat .v{font-size:1.3rem}
+  .tabs button{padding:7px 10px}
+  .brand .bname{display:none}
+  .card{height:min(100%,calc(100vw * 1.05))}
+}
+@media (prefers-reduced-motion: reduce){ *{animation:none!important;transition:none!important} }
+</style>
+</head>
+<body>
+<div class="wrap" id="app"></div>
+<div id="layer"></div>
+
+<script>
+/* ============================================================
+   CONTEÚDO — baseado no Dossiê e no Kit imprimível
+   ============================================================ */
+const TEMAS = {
+  familia:{nome:"Família", w:["MAMÃE","PAPAI","IRMÃO","IRMÃ","AMIGO","AMIGA","BEBÊ","PROFESSOR","MENINA","MENINO"]},
+  casa:{nome:"Casa", w:["CASA","PORTA","JANELA","MESA","CADEIRA","SOFÁ","CAMA","BANHO","COZINHA","QUARTO"]},
+  brinquedos:{nome:"Brinquedos", w:["BOLA","LIVRO","DADO","BLOCO","LÁPIS","PAPEL","BONECO","CORDA","CARRINHO","MOCHILA"]},
+  animais:{nome:"Animais", w:["GATO","CACHORRO","PATO","CAVALO","LEÃO","MACACO","JACARÉ","TARTARUGA","BALEIA","CAPIVARA"]},
+  natureza:{nome:"Natureza", w:["SOL","LUA","CHUVA","VENTO","NUVEM","ÁRVORE","FLOR","RIO","PEDRA","FOLHA"]},
+  comidas:{nome:"Comidas", w:["PÃO","LEITE","MAÇÃ","BANANA","UVA","ARROZ","FEIJÃO","QUEIJO","BOLO","CENOURA"]},
+  cores:{nome:"Cores e jeitos", w:["AZUL","VERDE","ROXO","AMARELO","VERMELHO","GRANDE","PEQUENO","RÁPIDO","LENTO","MACIO"]},
+  acoes:{nome:"Ações", w:["PULAR","CORRER","LER","CANTAR","DORMIR","ABRIR","FECHAR","PINTAR","OLHAR","BRINCAR"]},
+  espaco:{nome:"Espaço", w:["FOGUETE","ESTRELA","PLANETA","SATURNO","MARTE","COMETA","ASTRONAUTA","UNIVERSO","GALÁXIA","TERRA"]},
+  dinos:{nome:"Dinossauros", w:["DINOSSAURO","FÓSSIL","ROCHA","OSSO","OVO","PRESA","GARRA","CIÊNCIA","MUSEU","ESPÉCIE"]},
+};
+const PARES = ["BOLA AZUL","BOLA VERDE","GATO PRETO","GATO BRANCO","CARRO VERMELHO","CARRO RÁPIDO","CASA GRANDE","CASA PEQUENA","LIVRO NOVO","LIVRO ANTIGO","DINOSSAURO VERDE","DINOSSAURO GIGANTE","FOGUETE AZUL","FOGUETE RÁPIDO","LUA CHEIA","CÉU ESCURO","SOL QUENTE","CHUVA FORTE","MACACO FELIZ","TARTARUGA LENTA","FLOR AMARELA","ÁRVORE ALTA","MENINO CURIOSO","MENINA ALEGRE","CACHORRO DORMINDO","PATO AMARELO","MESA REDONDA","PLANETA DISTANTE","ROCHA ANTIGA","OSSO ENORME"];
+const FRASES = ["O gato dorme.","A bola caiu.","O pato nada.","A mala é azul.","O sol apareceu.","A menina lê.","O menino pula.","A flor é amarela.","O cão olha a lua.","A chuva molhou a casa.","O foguete foi ao espaço.","A Terra gira.","O dinossauro é gigante.","A tartaruga anda devagar.","O macaco gosta de frutas.","O pai abriu o livro.","A mãe pintou uma estrela.","O carro parou na rua.","A baleia vive no mar.","O astronauta viu o planeta."];
+const LIVROS = [
+  {t:"A bola de Bia", p:["Bia ganhou uma bola azul.","A bola rolou pelo jardim.","Bia correu atrás da bola.","O gato viu a bola passar.","Bia pegou a bola e sorriu.","Depois, Bia brincou com o gato."], q:["Onde a bola rolou?","Quem viu a bola?","Como Bia se sentiu?"], a:"Desenhar o caminho da bola e escrever a palavra BOLA."},
+  {t:"A viagem do foguete", p:["O foguete estava pronto.","Lia colocou seu capacete.","O foguete subiu ao céu.","Lia viu a Terra pela janela.","A Lua parecia muito perto.","O foguete voltou para casa."], q:["O que Lia viu?","A Lua é igual à Terra?","O que aconteceu primeiro e depois?"], a:"Criar juntos uma página extra para a história."},
+  {t:"O mistério do fóssil", p:["Tom encontrou uma pedra diferente.","Na pedra havia uma marca.","Ele chamou sua amiga Nina.","Os dois foram ao museu.","Uma cientista explicou o fóssil.","Tom e Nina quiseram aprender mais."], q:["Por que a pedra chamou a atenção?","Quem ajudou as crianças?","O que é um fóssil?"], a:"Fazer a marca de uma folha em massinha de modelar."},
+];
+const BITS = [
+  {cat:"Astronomia", itens:[
+    {n:"SOL",e:"☀️",f:["É uma estrela.","Dá luz e calor à Terra.","Fica no centro do Sistema Solar."]},
+    {n:"TERRA",e:"🌍",f:["É o planeta em que vivemos.","Gira em torno de si mesma.","Dá voltas ao redor do Sol."]},
+    {n:"LUA",e:"🌕",f:["É o satélite natural da Terra.","Reflete a luz do Sol.","Tem fases que dá para observar."]},
+    {n:"MARTE",e:"🔴",f:["É um planeta rochoso.","Parece avermelhado.","Tem duas luas pequenas."]},
+    {n:"SATURNO",e:"🪐",f:["É um gigante de gás.","Tem anéis de partículas.","Também dá voltas ao redor do Sol."]}]},
+  {cat:"Animais brasileiros", itens:[
+    {n:"ONÇA-PINTADA",e:"🐆",f:["É um felino das Américas.","Vive em vários biomas.","Tem manchas chamadas rosetas."]},
+    {n:"CAPIVARA",e:"",f:["É um roedor bem grande.","Gosta de viver perto da água.","Costuma andar em grupo."]},
+    {n:"ARARA",e:"🦜",f:["É uma ave de bico forte.","Usa o bico para segurar comida.","Muitas têm penas coloridas."]},
+    {n:"BOTO",e:"🐬",f:["É um mamífero que vive na água.","Sobe à superfície para respirar.","Usa sons para perceber o ambiente."]},
+    {n:"TAMANDUÁ",e:"",f:["Tem o focinho bem comprido.","Come principalmente insetos.","Usa uma língua especial."]}]},
+  {cat:"Partes da planta", itens:[
+    {n:"RAIZ",e:"",f:["Prende a planta no chão.","Puxa água e nutrientes."]},
+    {n:"CAULE",e:"🌿",f:["Sustenta a planta.","Leva água e alimento para as partes."]},
+    {n:"FOLHA",e:"🍃",f:["Ajuda a planta a fazer seu alimento com a luz.","Troca ar com o ambiente."]},
+    {n:"FLOR",e:"🌸",f:["Em muitas plantas, ajuda a formar sementes."]},
+    {n:"FRUTO",e:"🍎",f:["Protege as sementes.","Ajuda a espalhar as sementes."]}]},
+  {cat:"Corpo humano", itens:[
+    {n:"CORAÇÃO",e:"🫀",f:["Bombeia o sangue pelo corpo."]},
+    {n:"PULMÃO",e:"🫁",f:["Ajuda a gente a respirar."]},
+    {n:"CÉREBRO",e:"🧠",f:["Junta informações.","Ajuda a lembrar, pensar e agir."]},
+    {n:"PELE",e:"✋",f:["Protege o corpo.","Ajuda a sentir o ambiente."]},
+    {n:"OSSO",e:"🦴",f:["Sustenta e protege o corpo.","Ajuda nos movimentos."]}]},
+  {cat:"Veículos", itens:[
+    {n:"BICICLETA",e:"🚲",f:["Tem rodas.","Anda com a força das pernas."]},
+    {n:"TREM",e:"🚆",f:["Leva pessoas e cargas.","Anda sobre trilhos."]},
+    {n:"AVIÃO",e:"✈️",f:["Tem asas.","Voa usando motores."]},
+    {n:"BARCO",e:"⛵",f:["Anda na água.","Pode usar vento, remo ou motor."]},
+    {n:"FOGUETE",e:"🚀",f:["Solta gases bem rápido.","Assim ganha impulso para subir."]}]},
+  {cat:"Paleontologia", itens:[
+    {n:"FÓSSIL",e:"🪨",f:["É uma pista de seres que viveram há muito tempo."]},
+    {n:"PALEONTÓLOGO",e:"🔎",f:["Estuda a vida antiga pelos fósseis."]},
+    {n:"TRILOBITA",e:"",f:["Animal marinho que já foi extinto.","Conhecido pelos fósseis."]},
+    {n:"DINOSSAURO",e:"🦕",f:["Grupo de animais com ossos.","As aves são parentes dos dinossauros."]},
+    {n:"PEGADA FÓSSIL",e:"🐾",f:["Marca guardada na rocha.","Mostra como o animal andava."]}]},
+];
+/* Cadeias "uma letra muda tudo": a última palavra é a palavra nova (teste de transferência) */
+const SONS = [
+  ["MALA","BALA","BOLA","MOLA"],
+  ["GATO","PATO","RATO","MATO"],
+  ["PATO","PATA","LATA","LADO"],
+  ["CAMA","LAMA","LAVA","LUVA"],
+  ["FALA","SALA","SOLA","COLA"],
+  ["DADO","DEDO","MEDO"],
+  ["FALA","FILA","VILA"],
+];
+const NUM = ["zero","um","dois","três","quatro","cinco","seis","sete","oito","nove","dez","onze","doze","treze","catorze","quinze","dezesseis","dezessete","dezoito","dezenove","vinte"];
+const MAOS = [
+  n=>[`Pegue ${n} tampinhas`,`Mostre o cartão e peça para colocar ${NUM[n]} tampinhas na mesa, uma de cada vez.`],
+  n=>[`Mude as tampinhas de lugar`,`Espalhe as ${n} tampinhas de outro jeito. A quantidade mudou? Deixe ele contar.`],
+  n=>[`Qual tem mais?`,`Coloque ${n} tampinhas de um lado e ${Math.max(1,n-2)} do outro. Qual tem mais? Como você sabe?`],
+];
+const FIGURINHAS = ["🐶","🐱","🦁","🐯","🐵","🐸","🐢","🐳","🐬","🦜","🦒","🐘","🦓","🦔","🦉","🐙","🦋","🐞","🦕","🦖","🚀","🛸","🪐","🌙","⭐","☀️","🌈","🌻","🍉","🍓","🚂","🚁","⛵","🎈","🎨","🥁","🎸","🏆","👑","💎"];
+const NIVEIS = [[0,"Semente"],[60,"Broto"],[160,"Explorador"],[320,"Curioso"],[540,"Pesquisador"],[820,"Astronauta"],[1180,"Cientista"],[1620,"Inventor"],[2150,"Sábio"],[2800,"Lenda das Letras"]];
+const STAR_POR_FIG = 40;
+const PERFIS = {
+  pequeno:{nome:"Bebê (0 a 3 anos)", cartoes:5, at:{palavras:true,leitura:false,pontos:true,bits:true,sons:false}},
+  pre:{nome:"Pré-escola (3 a 5)", cartoes:5, at:{palavras:true,leitura:true,pontos:true,bits:true,sons:false}},
+  alfa:{nome:"Alfabetização (6+)", cartoes:4, at:{palavras:true,leitura:true,pontos:true,bits:false,sons:true}},
+};
+const ATIV = {
+  palavras:{nome:"Palavras", g:"Aa", d:"Cartões de palavras inteiras, rápidos"},
+  leitura:{nome:"Pares, frases e livros", g:"…", d:"Segue a etapa de leitura atual"},
+  pontos:{nome:"Pontos", g:"⁘", d:"Quantidades com pontos vermelhos"},
+  bits:{nome:"Bits de inteligência", g:"✦", d:"Fatos do mundo por categoria"},
+  sons:{nome:"Uma letra muda tudo", g:"B→M", d:"Sons e letras, palavra nova no fim"},
+};
+const ETAPAS = ["","Palavras soltas","Pares de palavras","Frases curtas","Minilivros"];
+
+/* ============================================================
+   ROTINA AUTOMÁTICA
+   - "dia de rotina" = quantos dias já tiveram sessão (pular um dia não perde conteúdo)
+   - palavras em blocos de tema; o 1º conjunto fica 5 dias, depois sai 1 e entra 1 por dia
+   - pontos 1–20 no mesmo ritmo, depois contas com pontos
+   - bits: 5 dias por categoria (fatos a partir do 3º dia)
+   - leitura: pares no dia 11, frases no dia 21, minilivros no dia 31
+   ============================================================ */
+const ORDEM_TEMAS = ["familia","animais","brinquedos","natureza","espaco","dinos","casa","comidas","acoes","cores"];
+const LISTA = ORDEM_TEMAS.flatMap(t=>TEMAS[t].w.map(w=>({w,t})));
+function diaRotina(){ const t=new Date().toLocaleDateString("en-CA"); return new Set(S.sessoes.filter(s=>s.d<t).map(s=>s.d)).size }
+function etapaDe(k){ return S.config.etapa>0 ? S.config.etapa : k<10?1 : k<20?2 : k<30?3 : 4 }
+function plano(k){
+  const n=S.config.cartoes, s=Math.max(0,k-4), L=LISTA.length;
+  const pal=[]; for(let i=0;i<n;i++) pal.push(LISTA[(s+i)%L]);
+  const novas = k===0 ? pal.map(x=>x.w) : (k>=5 ? [pal[n-1].w] : []);
+  const pontos = s+5<=20 ? [s+1,s+2,s+3,s+4,s+5] : null;
+  return {k, s, pal:pal.map(x=>x.w), tema:TEMAS[pal[n-1].t].nome, novas, vistas:Math.min(s,L),
+    pontos, bits:Math.floor(k/5)%BITS.length, fatos:(k%5)>=2, sons:SONS[k%SONS.length], etapa:etapaDe(k)};
+}
+function leituraResumo(p){
+  const d=p.k;
+  if(p.etapa===2){ const i=d%6; return "Pares: "+PARES.slice(i*5,i*5+3).join(", ").toLocaleLowerCase("pt-BR")+"…" }
+  if(p.etapa===3){ const i=d%5; return "Frases: "+FRASES[i*4]+" …" }
+  if(p.etapa===4) return "Minilivro: "+LIVROS[Math.floor(d/2)%LIVROS.length].t;
+  return "";
+}
+
+/* ============================================================
+   ESTADO + PERSISTÊNCIA (conta Claude via db, cópia local de apoio)
+   ============================================================ */
+const LS_KEY = "cartoes-do-dia:v1";
+const hoje = () => new Date().toLocaleDateString("en-CA");
+function range(a,b){const r=[];for(let i=a;i<=b;i++)r.push(i);return r}
+function defaultState(){
+  return {v:2, updatedAt:0,
+    config:{nome:"", perfil:"pre", sessoesDia:3, cartoes:5, auto:false, velocidade:1500, voz:false, caixa:"maiusc", cor:"vermelho",
+      temas:Object.keys(TEMAS), atividades:{...PERFIS.pre.at}, etapa:0, onboard:true},
+    pal:{ativas:[], fila:[], expo:{}, aposentadas:[], ultimaTroca:""},
+    pts:{ativas:[1,2,3,4,5], fila:range(6,20), expo:{}, aposentadas:[], ultimaTroca:""},
+    bits:{cat:0, expo:{}, ultimaTroca:""},
+    rot:{dia:"", dias:0},
+    estrelas:0, figs:0, sessoes:[], obs:[]};
+}
+let S = defaultState();
+function loadLocal(){ try{ const raw=localStorage.getItem(LS_KEY); if(raw){ return JSON.parse(raw) } }catch(e){} return null }
+function saveLocal(){ try{ localStorage.setItem(LS_KEY, JSON.stringify(S)) }catch(e){} }
+function migrate(s){ const d=defaultState(); const o={...d,...s}; o.config={...d.config,...(s.config||{})}; o.config.atividades={...d.config.atividades,...((s.config||{}).atividades||{})}; ["pal","pts","bits","rot"].forEach(k=>o[k]={...d[k],...(s[k]||{})});
+  if(!s.v || s.v<2){ o.v=2; o.config.onboard=true; o.config.etapa=0; o.config.temas=Object.keys(TEMAS) }
+  return o }
+const L = loadLocal(); if(L) S = migrate(L);
+
+let dbDoc=null, syncState="local", saving=false, pendingSave=false, saveTimer=null;
+function persist(){
+  S.updatedAt = Date.now(); saveLocal();
+  clearTimeout(saveTimer); saveTimer=setTimeout(pushRemote, 700);
+}
+async function pushRemote(){
+  if(!dbDoc) return;
+  if(saving){ pendingSave=true; return }
+  saving=true;
+  try{ if(S.sessoes.length>1500) S.sessoes=S.sessoes.slice(-1500); if(S.obs.length>500) S.obs=S.obs.slice(-500);
+    await dbDoc.set(JSON.parse(JSON.stringify(S))); syncState="ok" }
+  catch(e){ syncState = "local" }
+  saving=false; if(pendingSave){ pendingSave=false; pushRemote() }
+  updateSyncBadge();
+}
+async function initRemote(){
+  try{
+    if(!window.claude || !window.claude.use) return;
+    const user = await window.claude.use("user");
+    const db = await window.claude.use("db");
+    if(!user || !db) return;
+    const uid = await user.id(); if(!uid) return;
+    dbDoc = db.doc("data/users/"+uid+"/progresso");
+    const snap = await Promise.race([dbDoc.get(), new Promise((_,rej)=>setTimeout(()=>rej("timeout"),10000))]);
+    if(snap.exists){
+      const remote = migrate(snap.data());
+      if((remote.updatedAt||0) > (S.updatedAt||0)){ S = remote; saveLocal(); syncState="ok"; render(); return }
+    }
+    syncState="ok";
+    if(S.updatedAt>0) pushRemote();
+    updateSyncBadge();
+  }catch(e){ syncState="local"; updateSyncBadge() }
+}
+
+/* ============================================================
+   REGRAS DO MÉTODO
+   - 1 conjunto de ~5 cartões, embaralhado a cada vez
+   - cada item fica ~5 dias (5 × sessões/dia exposições)
+   - depois disso, troca no máximo 1 item por dia (o mais antigo)
+   ============================================================ */
+const maxExpo = () => 5*Math.max(1,S.config.sessoesDia);
+function buildFila(){
+  const usados = new Set([...S.pal.ativas, ...S.pal.aposentadas]);
+  const temas = S.config.temas.length? S.config.temas : Object.keys(TEMAS);
+  const listas = temas.map(t=>TEMAS[t].w.filter(w=>!usados.has(w)));
+  const fila=[]; let i=0;
+  while(listas.some(l=>l.length)){ const l=listas[i%listas.length]; if(l.length) fila.push(l.shift()); i++ }
+  const resto = Object.keys(TEMAS).filter(t=>!temas.includes(t)).flatMap(t=>TEMAS[t].w).filter(w=>!usados.has(w)&&!fila.includes(w));
+  S.pal.fila = [...fila, ...resto];
+}
+function rotate(pool, size){
+  const t=hoje();
+  if(pool.ultimaTroca!==t){
+    const due = pool.ativas.filter(x=>(pool.expo[x]||0)>=maxExpo()).sort((a,b)=>(pool.expo[b]||0)-(pool.expo[a]||0));
+    if(due.length){ const out=due[0]; pool.ativas=pool.ativas.filter(x=>x!==out); pool.aposentadas.push(out); pool.ultimaTroca=t }
+  }
+  while(pool.ativas.length<size && pool.fila.length) pool.ativas.push(pool.fila.shift());
+  while(pool.ativas.length>size){ pool.fila.unshift(pool.ativas.pop()) }
+}
+function bitsCat(){
+  const t=hoje(), b=S.bits, c=BITS[b.cat%BITS.length].cat;
+  if(b.ultimaTroca!==t && (b.expo[c]||0)>=maxExpo()){ b.cat=(b.cat+1)%BITS.length; b.ultimaTroca=t }
+  return BITS[b.cat%BITS.length];
+}
+function newDay(){ const t=hoje(); if(S.rot.dia!==t){ if(S.rot.dia) S.rot.dias++; S.rot.dia=t } }
+const shuffle = a => { a=[...a]; for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]} return a };
+function caixa(w){
+  const c=S.config.caixa;
+  if(c==="minusc") return w.toLocaleLowerCase("pt-BR");
+  if(c==="mista") return (S.sessoes.length%2)? w.toLocaleLowerCase("pt-BR") : w.toLocaleUpperCase("pt-BR");
+  return w.toLocaleUpperCase("pt-BR");
+}
+function caixaFrase(f){ return S.config.caixa==="maiusc" ? f.toLocaleUpperCase("pt-BR") : (S.config.caixa==="mista" && !(S.sessoes.length%2) ? f.toLocaleUpperCase("pt-BR") : f) }
+
+/* ---------- montagem das atividades ---------- */
+function actPalavras(){
+  const pl=plano(diaRotina());
+  return {id:"palavras", nome:"Palavras · "+pl.tema, slides: shuffle(pl.pal).map(w=>({k:"palavra", item:w, text:caixa(w), voice:w}))};
+}
+function actLeitura(){
+  const d=diaRotina(), e=etapaDe(d);
+  if(e<=1) return null;
+  if(e===2){ const n=5, sets=Math.ceil(PARES.length/n), i=d%sets; return {id:"pares", nome:"Pares de palavras", slides: shuffle(PARES.slice(i*n,i*n+n)).map(p=>({k:"texto", text:caixa(p), voice:p}))} }
+  if(e===3){ const n=4, sets=Math.ceil(FRASES.length/n), i=d%sets; return {id:"frases", nome:"Frases", slides: FRASES.slice(i*n,i*n+n).map(f=>({k:"texto", text:caixaFrase(f), voice:f})), fim:{k:"instr", big:"Quem fez o quê?", sub:"Converse sobre uma das frases. Peça para ele contar com as próprias palavras."}} }
+  const b=LIVROS[Math.floor(d/2)%LIVROS.length];
+  const sl=[{k:"livro", titulo:true, text:b.t, voice:b.t}, ...b.p.map((p,i)=>({k:"livro", pg:i+1, text:p, voice:p})), {k:"instr", big:"Vamos conversar", sub:b.q.join("  •  "), extra:b.a}];
+  return {id:"livro", nome:"Minilivro: "+b.t, slides:sl, manual:true};
+}
+function actPontos(){
+  const pl=plano(diaRotina());
+  if(!pl.pontos){
+    const sl=[]; for(let i=0;i<5;i++){ const c=2+Math.floor(Math.random()*9), a=1+Math.floor(Math.random()*(c-1)); const sub=Math.random()<.3; sl.push(sub?{k:"eq",a:c,b:a,op:"−",r:c-a,voice:`${NUM[c]} menos ${NUM[a]}, igual a ${NUM[c-a]}`}:{k:"eq",a,b:c-a,op:"+",r:c,voice:`${NUM[a]} mais ${NUM[c-a]}, igual a ${NUM[c]}`}) }
+    return {id:"contas", nome:"Contas com pontos", slides:sl};
+  }
+  const sl = shuffle(pl.pontos).map(n=>({k:"pontos", item:n, n, voice:NUM[n], seed:Math.random()}));
+  if(S.config.perfil!=="pequeno"){ const n=pl.pontos[Math.floor(Math.random()*pl.pontos.length)]; const m=MAOS[Math.floor(Math.random()*MAOS.length)](n); sl.push({k:"instr", big:m[0], sub:m[1], dots:n}) }
+  return {id:"pontos", nome:"Pontos", slides:sl};
+}
+function actBits(){
+  const pl=plano(diaRotina()), c=BITS[pl.bits], fatos=pl.fatos;
+  return {id:"bits", cat:c.cat, nome:"Bits: "+c.cat, slides: shuffle(c.itens).map(it=>({k:"bit", e:it.e, text:caixa(it.n), voice:it.n, fatos: fatos? it.f : null}))};
+}
+function actSons(){
+  const ch=SONS[diaRotina()%SONS.length];
+  const sl = ch.map((w,i)=>{
+    const prev=i?ch[i-1]:null; const diff=prev? [...w].map((c,j)=>c!==prev[j]) : null; const last=i===ch.length-1;
+    return {k:"sons", text:w, diff, last, voice:w, chain:ch.join(" → "),
+      say: i===0 ? `Leia junto: <b>${w}</b>. Qual é o primeiro som que a gente ouve?` : last ? `Palavra nova! Deixe ele tentar ler sozinho, juntando os sons. Sem pressa.` : `Uma letra mudou. Qual? Que som ela faz? Vamos juntar os sons: <b>${w}</b>.`};
+  });
+  return {id:"sons", nome:"Uma letra muda tudo", slides:sl, manual:true};
+}
+function buildSession(only){
+  const a=S.config.atividades, list=[];
+  const want = k => only ? only===k : a[k];
+  if(want("palavras")) list.push(actPalavras());
+  if(want("leitura")){ const l=actLeitura(); if(l) list.push(l); else if(only) list.push(actPalavras()) }
+  if(want("sons")) list.push(actSons());
+  if(want("pontos")) list.push(actPontos());
+  if(want("bits")) list.push(actBits());
+  return list.filter(Boolean);
+}
+
+/* ============================================================
+   PONTOS E CONQUISTAS — por participar, nunca por acertar
+   ============================================================ */
+const sessoesHoje = () => S.sessoes.filter(s=>s.d===hoje());
+function nivel(){ let i=0; NIVEIS.forEach((n,j)=>{ if(S.estrelas>=n[0]) i=j }); const cur=NIVEIS[i], nx=NIVEIS[i+1]; return {i, nome:cur[1], prox:nx?nx[1]:null, pct: nx? (S.estrelas-cur[0])/(nx[0]-cur[0]) : 1, falta: nx? nx[0]-S.estrelas : 0} }
+function diasComSessao(){ return new Set(S.sessoes.map(s=>s.d)) }
+function sequencia(){
+  const set=diasComSessao(); let d=new Date(); let n=0;
+  if(!set.has(hoje())) d.setDate(d.getDate()-1);
+  while(set.has(d.toLocaleDateString("en-CA"))){ n++; d.setDate(d.getDate()-1) }
+  return n;
+}
+function interesseRecente(){ const r=S.sessoes.filter(s=>s.i).slice(-3); if(r.length<3) return null; return r.reduce((a,s)=>a+s.i,0)/r.length }
+
+/* ============================================================
+   UI
+   ============================================================ */
+const $ = (s,el=document)=>el.querySelector(s);
+const esc = s => String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const STAR = `<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2.5l2.9 6 6.6.9-4.8 4.6 1.2 6.5L12 17.4l-5.9 3.1 1.2-6.5L2.5 9.4l6.6-.9z"/></svg>`;
+let view = "home", lastFig = -1;
+
+function render(){
+  const app=$("#app");
+  const nome = S.config.nome || "explorador";
+  app.innerHTML = `
+    <div class="top">
+      <div class="brand"><div class="brand-mark">a</div><span class="bname">Cartões do Dia</span></div>
+      <div class="tabs" role="tablist">
+        <button role="tab" aria-selected="${view==="home"}" data-v="home">Brincar</button>
+        <button role="tab" aria-selected="${view==="rotina"}" data-v="rotina">Rotina</button>
+        <button role="tab" aria-selected="${view==="album"}" data-v="album">Álbum</button>
+        <button role="tab" aria-selected="${view==="pais"}" data-v="pais">Pais</button>
+      </div>
+    </div>
+    ${view==="home"? homeHTML(nome) : view==="rotina"? rotinaHTML() : view==="album"? albumHTML() : paisHTML()}
+  `;
+  app.querySelectorAll("[data-v]").forEach(b=>b.onclick=()=>{ view=b.dataset.v; render(); window.scrollTo(0,0) });
+  bind();
+}
+
+function homeHTML(nome){
+  const lv=nivel(), hj=sessoesHoje().length, meta=S.config.sessoesDia, seq=sequencia();
+  const slots = range(1,meta).map(i=>`<div class="slot ${i<=hj?"done":""}" aria-label="Sessão ${i} ${i<=hj?"feita":"a fazer"}">${i<=hj?STAR:i}</div>`).join("");
+  const metaOk = hj>=meta;
+  const ir = interesseRecente();
+  const a=S.config.atividades, pl=plano(diaRotina());
+  return `
+  <section class="hero">
+    <div class="hello">
+      <p class="eyebrow">${new Date().toLocaleDateString("pt-BR",{weekday:"long", day:"numeric", month:"long"})}</p>
+      <h1>Oi, ${esc(nome)}!</h1>
+      <span class="level">Nível ${lv.i+1} · ${lv.nome}</span>
+      ${lv.prox? `<div class="lvlbar" aria-label="Progresso até o próximo nível"><i style="width:${Math.round(lv.pct*100)}%"></i></div><p class="small muted">Faltam ${lv.falta} estrelas para virar <b>${lv.prox}</b></p>`:`<p class="small muted">Nível máximo. Que jornada!</p>`}
+    </div>
+    <div class="starbox"><span class="star-ico">${STAR}</span><span class="n">${S.estrelas}</span><span class="l">estrelas</span></div>
+  </section>
+
+  <section class="panel today">
+    <div class="row" style="justify-content:space-between">
+      <div><h2>Sessões de hoje</h2><p class="small muted">${hj} de ${meta} feitas${metaOk? " · meta cumprida":""}</p></div>
+      <div class="sync" id="syncb"></div>
+    </div>
+    <div class="slots">${slots}</div>
+    <p class="small">Hoje é o <b>dia ${pl.k+1}</b> da rotina · tema <b>${pl.tema}</b>${pl.novas.length===1?` · palavra nova: <b>${esc(pl.novas[0])}</b>`:""} · <button class="linkbtn" data-v="rotina">ver a rotina</button></p>
+    ${metaOk
+      ? `<button class="go done" id="go">Meta cumprida! Mais uma, só por diversão</button><p class="small muted">Sessões extras não valem estrelas. O método pede pouco e bom: agora é hora de brincar livre, ler uma história ou correr lá fora.</p>`
+      : `<button class="go" id="go">Começar sessão ${hj+1}</button><p class="small muted">Cerca de 1 a 3 minutos. Pare a qualquer momento: as estrelas continuam valendo.</p>`}
+  </section>
+
+  ${ir!==null && ir<=2 ? `<div class="note warn"><div><b>Pouco interesse nas últimas sessões.</b> O guia recomenda reduzir o número de cartões, trocar o tema ou dar uma pausa de alguns dias. Ajuste em Pais.</div></div>`:""}
+
+  <section class="stats">
+    <div class="stat"><span class="v">${seq}</span><span class="k">dias seguidos</span></div>
+    <div class="stat"><span class="v">${pl.vistas}</span><span class="k">palavras já vistas</span></div>
+    <div class="stat"><span class="v">${Math.floor(S.estrelas/STAR_POR_FIG)}</span><span class="k">figurinhas</span></div>
+  </section>
+
+  <section class="panel">
+    <div><h2>Brincar só de uma coisa</h2><p class="small muted">Atalhos para uma atividade. Contam como sessão.</p></div>
+    <div class="acts">
+      ${Object.entries(ATIV).filter(([k])=> k!=="leitura" || pl.etapa>1).map(([k,v])=>`<button class="act" data-only="${k}"><span class="glyph">${v.g}</span><b>${k==="leitura"? ETAPAS[pl.etapa] : v.nome}</b><span>${v.d}</span></button>`).join("")}
+    </div>
+  </section>`;
+}
+
+function rotinaHTML(){
+  const k=diaRotina(), a=S.config.atividades, dias=[];
+  for(let j=0;j<14;j++){ const dt=new Date(); dt.setDate(dt.getDate()+j); dias.push({p:plano(k+j), dt, j}) }
+  return `
+  <section class="panel">
+    <div><h2>Rotina automática</h2>
+    <p class="small muted">O site monta cada dia sozinho e faz as trocas. O primeiro conjunto de palavras fica 5 dias; depois sai uma e entra uma nova por dia. Os bits mudam de categoria a cada 5 dias, e a leitura avança para pares, frases e minilivros conforme os dias passam.</p></div>
+    <div class="note info"><div>A rotina só avança nos dias em que vocês fazem pelo menos uma sessão. Se pular um dia, ninguém perde conteúdo. As datas abaixo valem se fizerem todo dia.</div></div>
+  </section>
+  <div class="days">${dias.map(({p,dt,j})=>`
+    <article class="day ${j===0?"is-today":""}">
+      <header><span class="dn">Dia ${p.k+1}</span><span class="dd">${j===0?"Hoje":dt.toLocaleDateString("pt-BR",{weekday:"short",day:"numeric",month:"short"})}</span><span class="tm">${p.tema}</span></header>
+      <dl>
+        ${a.palavras?`<div><dt>Palavras</dt><dd>${p.pal.map(w=>`<span class="w ${p.novas.includes(w)?"on":""}">${esc(w)}</span>`).join("")}</dd></div>`:""}
+        ${a.leitura && p.etapa>1?`<div><dt>Leitura</dt><dd>${esc(leituraResumo(p))}</dd></div>`:""}
+        ${a.pontos?`<div><dt>Pontos</dt><dd>${p.pontos? p.pontos.join(", ") : "Contas com pontos"}</dd></div>`:""}
+        ${a.bits?`<div><dt>Bits</dt><dd>${BITS[p.bits].cat}${p.fatos?" · com fatos":" · só os nomes"}</dd></div>`:""}
+        ${a.sons?`<div><dt>Sons</dt><dd>${p.sons.join(" → ")}</dd></div>`:""}
+      </dl>
+    </article>`).join("")}
+  </div>
+  <p class="small muted">Em vermelho, as palavras que entram no dia.</p>`;
+}
+
+function albumHTML(){
+  const n=Math.floor(S.estrelas/STAR_POR_FIG), falta=STAR_POR_FIG - (S.estrelas%STAR_POR_FIG);
+  return `
+  <section class="panel">
+    <div class="row" style="justify-content:space-between"><div><h2>Álbum de figurinhas</h2><p class="small muted">Uma figurinha nova a cada ${STAR_POR_FIG} estrelas. Faltam ${falta} para a próxima.</p></div><div class="starbox" style="min-width:0;padding:8px 14px;flex-direction:row;gap:8px"><span class="star-ico">${STAR}</span><span class="n" style="font-size:1.6rem">${S.estrelas}</span></div></div>
+    <div class="album">${FIGURINHAS.map((f,i)=> i<n ? `<div class="stk ${i===lastFig?"new":""}" title="Figurinha ${i+1}">${f}</div>` : `<div class="stk lock">${i+1}</div>`).join("")}</div>
+  </section>
+  <section class="panel">
+    <h3>Como ganhar estrelas</h3>
+    <table class="tbl"><tbody>
+      <tr><td>Cada atividade da sessão</td><td><b>+3</b></td></tr>
+      <tr><td>Terminar uma sessão, mesmo que pare antes</td><td><b>+5</b></td></tr>
+      <tr><td>Cumprir a meta do dia</td><td><b>+10</b></td></tr>
+      <tr><td>Cada 7 dias seguidos</td><td><b>+15</b></td></tr>
+    </tbody></table>
+    <p class="small muted">As estrelas vêm de participar. Nenhuma estrela depende de acertar: o método pede brincadeira, não prova.</p>
+  </section>`;
+}
+
+function paisHTML(){
+  const c=S.config, lv=nivel();
+  const ses7 = S.sessoes.filter(s=> (Date.now()-s.t) < 7*864e5);
+  const notas = S.sessoes.filter(s=>s.i).slice(-10); const media = notas.length? (notas.reduce((a,s)=>a+s.i,0)/notas.length).toFixed(1) : "–";
+  // calendário 5 semanas
+  const cont={}; S.sessoes.forEach(s=>cont[s.d]=(cont[s.d]||0)+1);
+  const end=new Date(); const start=new Date(); start.setDate(end.getDate()-34 - ((end.getDay()+6)%7 ? 0:0));
+  start.setDate(start.getDate() - ((start.getDay()+6)%7));
+  let cal=["S","T","Q","Q","S","S","D"].map(h=>`<div class="h">${h}</div>`).join("");
+  for(let d=new Date(start); d<=end; d.setDate(d.getDate()+1)){
+    const k=d.toLocaleDateString("en-CA"), n=cont[k]||0, lvl= n===0?"": n>=c.sessoesDia?"l3": n>=Math.ceil(c.sessoesDia/2)?"l2":"l1";
+    cal+=`<div class="d ${lvl} ${k===hoje()?"today":""}" title="${d.toLocaleDateString("pt-BR")}: ${n} sessão(ões)">${d.getDate()}</div>`;
+  }
+  const pk=plano(diaRotina()), sug=0;
+  const obs = S.obs.slice(-12).reverse();
+  const recentes = S.sessoes.slice(-8).reverse();
+  const FACE=["","😣","🙁","😐","🙂","😄"];
+  return `
+  <section class="panel">
+    <div class="row" style="justify-content:space-between"><h2>Área dos pais</h2><span class="sync" id="syncb"></span></div>
+    <div class="stats">
+      <div class="stat"><span class="v">${ses7.length}</span><span class="k">sessões em 7 dias</span></div>
+      <div class="stat"><span class="v">${media}</span><span class="k">interesse médio (1 a 5)</span></div>
+      <div class="stat"><span class="v">${lv.i+1}</span><span class="k">nível · ${lv.nome}</span></div>
+    </div>
+    ${sug? `<div class="note good"><div><b>Pode ser hora de avançar.</b> ${S.pal.aposentadas.length} palavras já passaram pelo ciclo completo. Se ele mostra curiosidade e entende as palavras, experimente a etapa <b>${ETAPAS[sug]}</b>. <div class="row" style="margin-top:8px"><button class="btn small primary" data-etapa="${sug}">Ir para ${ETAPAS[sug]}</button></div></div></div>`:""}
+  </section>
+
+  <section class="panel">
+    <h3>Últimas 5 semanas</h3>
+    <div class="cal">${cal}</div>
+    <p class="small muted">Quanto mais forte a cor, mais perto da meta de ${c.sessoesDia} sessões no dia.</p>
+  </section>
+
+  <section class="panel">
+    <h3>Palavras</h3>
+    <p class="small muted">Em vermelho, o conjunto de hoje. Em verde, as que já completaram o ciclo. Cinza: próximas.</p>
+    <div class="words">
+      ${pk.pal.map(w=>`<span class="w on" title="Vista ${S.pal.expo[w]||0} vezes">${esc(w)}</span>`).join("")}
+      ${LISTA.slice(0,pk.vistas).map(x=>`<span class="w ret">${esc(x.w)}</span>`).join("")}
+      ${LISTA.slice(pk.s+c.cartoes, pk.s+c.cartoes+10).map(x=>`<span class="w">${esc(x.w)}</span>`).join("")}
+    </div>
+    <p class="small muted">Pontos hoje: ${pk.pontos? pk.pontos.join(", "):"contas com pontos"}. Bits: categoria <b>${BITS[pk.bits].cat}</b>.</p>
+  </section>
+
+  <section class="panel">
+    <h3>Palavras novas (transferência)</h3>
+    <p class="small muted">No fim de "Uma letra muda tudo" aparece uma palavra que ele nunca treinou. Ler essa palavra é o sinal mais forte de leitura de verdade, segundo o dossiê.</p>
+    ${obs.length? `<div class="scroll"><table class="tbl"><thead><tr><th>Data</th><th>Palavra</th><th>Resultado</th></tr></thead><tbody>${obs.map(o=>`<tr><td>${o.d.split("-").reverse().slice(0,2).join("/")}</td><td><b>${esc(o.w)}</b></td><td>${o.r==="sozinho"?"Leu sozinho":o.r==="ajuda"?"Leu com ajuda":"Ainda não"}</td></tr>`).join("")}</tbody></table></div>` : `<div class="note info">Ainda sem registros. Ative a atividade "Uma letra muda tudo" quando ele já conhecer algumas letras.</div>`}
+  </section>
+
+  <section class="panel">
+    <h3>Diário das sessões</h3>
+    ${recentes.length? `<div class="scroll"><table class="tbl"><thead><tr><th>Quando</th><th>O que</th><th>Interesse</th><th>Nota</th></tr></thead><tbody>${recentes.map(s=>`<tr><td>${new Date(s.t).toLocaleDateString("pt-BR",{day:"2-digit",month:"2-digit"})} ${new Date(s.t).toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"})}</td><td>${esc(s.a||"")}${s.parou?" · parou antes":""}</td><td>${s.i?FACE[s.i]:"–"}</td><td>${esc(s.n||"")}</td></tr>`).join("")}</tbody></table></div>` : `<div class="note info">As sessões aparecem aqui com o interesse que você marcar no final de cada uma.</div>`}
+  </section>
+
+  <section class="panel">
+    <h3>Ajustes</h3>
+    <div class="grid2">
+      <label class="f">Nome da criança<input type="text" id="c-nome" value="${esc(c.nome)}" autocomplete="off"></label>
+      <label class="f">Idade
+        <select id="c-perfil">${Object.entries(PERFIS).map(([k,p])=>`<option value="${k}" ${c.perfil===k?"selected":""}>${p.nome}</option>`).join("")}</select></label>
+      <label class="f">Sessões por dia (meta)
+        <select id="c-ses">${[1,2,3,4,5,6].map(n=>`<option value="${n}" ${c.sessoesDia===n?"selected":""}>${n}</option>`).join("")}</select></label>
+      <label class="f">Cartões por conjunto
+        <select id="c-cart">${[3,4,5,6,7].map(n=>`<option value="${n}" ${c.cartoes===n?"selected":""}>${n}${n===5?" (clássico)":""}</option>`).join("")}</select></label>
+      <label class="f">Etapa de leitura
+        <select id="c-etapa"><option value="0" ${!c.etapa?"selected":""}>Automática (hoje: ${ETAPAS[pk.k<10?1:pk.k<20?2:pk.k<30?3:4]})</option>${[1,2,3,4].map(n=>`<option value="${n}" ${c.etapa===n?"selected":""}>Fixar em ${n}. ${ETAPAS[n]}</option>`).join("")}</select></label>
+      <label class="f">Letras
+        <select id="c-caixa"><option value="maiusc" ${c.caixa==="maiusc"?"selected":""}>MAIÚSCULAS</option><option value="minusc" ${c.caixa==="minusc"?"selected":""}>minúsculas</option><option value="mista" ${c.caixa==="mista"?"selected":""}>Alternar a cada sessão</option></select></label>
+      <label class="f">Cor das letras
+        <select id="c-cor"><option value="vermelho" ${c.cor==="vermelho"?"selected":""}>Vermelho (clássico)</option><option value="preto" ${c.cor==="preto"?"selected":""}>Preto (como nos livros)</option></select></label>
+      <label class="f">Velocidade no modo automático
+        <select id="c-vel">${[[900,"Bem rápido (0,9 s)"],[1200,"Rápido (1,2 s)"],[1500,"Normal (1,5 s)"],[2200,"Calmo (2,2 s)"]].map(([v,l])=>`<option value="${v}" ${c.velocidade===v?"selected":""}>${l}</option>`).join("")}</select></label>
+    </div>
+    <div>
+      <div class="toggle"><span><b>Avançar sozinho</b><small>Os cartões passam no tempo escolhido. Desligado, você toca para avançar.</small></span><input type="checkbox" class="sw" id="c-auto" ${c.auto?"checked":""}></div>
+      <div class="toggle"><span><b>Voz lê o cartão</b><small>O ideal é você falar a palavra. Use a voz quando precisar.</small></span><input type="checkbox" class="sw" id="c-voz" ${c.voz?"checked":""}></div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:6px"><b class="small">Atividades que entram em cada sessão</b>
+      <div>${Object.entries(ATIV).map(([k,v])=>`<div class="toggle"><span><b>${v.nome}</b><small>${k==="leitura"? "Etapa de hoje: "+ETAPAS[pk.etapa]+(pk.etapa===1?" (começa sozinha no dia 11)":"") : v.d}</small></span><input type="checkbox" class="sw" data-at="${k}" ${c.atividades[k]?"checked":""}></div>`).join("")}</div>
+    </div>
+  </section>
+
+  <section class="panel guide">
+    <h3>Guia rápido do método</h3>
+    <ul>
+      <li><b>Pouco, curto e alegre.</b> Cerca de 5 cartões, poucos segundos. Termine enquanto ele ainda quer mais.</li>
+      <li><b>Mostre e diga.</b> Fale a palavra com naturalidade. Não peça resposta durante a apresentação.</li>
+      <li><b>Rodízio.</b> O conjunto é embaralhado a cada vez. Depois de cerca de 5 dias, sai uma palavra por dia e entra uma nova. O site faz isso sozinho.</li>
+      <li><b>Leve para a vida real.</b> Procure a palavra em placas, livros e objetos da casa. Desenhe, conte uma história.</li>
+      <li><b>Pontos com objetos.</b> Junte os cartões de pontos com tampinhas e blocos de verdade: contar, comparar, juntar.</li>
+      <li><b>Leitura de verdade vem dos sons.</b> Reconhecer um cartão treinado é memória. Ler uma palavra nunca vista é leitura. Use "Uma letra muda tudo" a partir de uns 5 ou 6 anos.</li>
+      <li><b>Leia histórias todos os dias,</b> fora dos cartões. É a prática com mais apoio da ciência.</li>
+    </ul>
+    <h3>Quando parar ou reduzir</h3>
+    <ul>
+      <li>Irritação, recusa repetida, medo ou cansaço nos olhos: pare, reduza ou troque de atividade.</li>
+      <li>Nunca troque sono, brincadeira livre ou escola por mais sessões.</li>
+      <li>Sem gravar "proezas", sem comparar com outras crianças, sem testar na frente da família.</li>
+      <li>Dificuldade persistente com letras e sons: converse com a escola e procure um profissional.</li>
+    </ul>
+    <h3>Sinais de que vale avançar</h3>
+    <ul>
+      <li>Ele mostra curiosidade pelo próximo conteúdo, não só aceita.</li>
+      <li>Lê uma palavra nova usando letras e sons que já conhece.</li>
+      <li>Explica uma frase ou história com as próprias palavras.</li>
+      <li>Monta ou escreve uma palavra simples sem copiar.</li>
+    </ul>
+  </section>
+
+  <section class="panel">
+    <h3>Recomeçar do zero</h3>
+    <p class="small muted">Apaga estrelas, figurinhas, palavras vistas e o diário. Os ajustes ficam.</p>
+    <div class="row" id="resetrow"><button class="btn small" id="reset1">Apagar progresso</button></div>
+  </section>`;
+}
+
+function updateSyncBadge(){
+  const b=$("#syncb"); if(!b) return;
+  b.className="sync"+(syncState==="ok"?" ok":"");
+  b.innerHTML = `<i></i>${syncState==="ok"?"Salvo na sua conta":"Salvo neste aparelho"}`;
+}
+
+function toast(msg){ const t=document.createElement("div"); t.className="toast"; t.setAttribute("role","status"); t.textContent=msg; document.body.appendChild(t); setTimeout(()=>t.remove(),2200) }
+
+function bind(){
+  updateSyncBadge();
+  const go=$("#go"); if(go) go.onclick=()=>startSession();
+  document.querySelectorAll("[data-only]").forEach(b=>b.onclick=()=>startSession(b.dataset.only));
+  // pais
+  if($("#c-nome")){
+    const c=S.config;
+    const on=(id,fn)=>{ const el=$(id); if(el) el.onchange=()=>{ fn(el); persist(); render(); toast("Ajuste salvo") } };
+    on("#c-nome",el=>c.nome=el.value.trim());
+    on("#c-perfil",el=>setPerfil(el.value));
+    on("#c-ses",el=>c.sessoesDia=+el.value);
+    on("#c-cart",el=>{ c.cartoes=+el.value; rotate(S.pal,c.cartoes) });
+    on("#c-etapa",el=>{ c.etapa=+el.value; if(c.etapa>1) c.atividades.leitura=true });
+    on("#c-caixa",el=>c.caixa=el.value);
+    on("#c-cor",el=>c.cor=el.value);
+    on("#c-vel",el=>c.velocidade=+el.value);
+    on("#c-auto",el=>c.auto=el.checked);
+    on("#c-voz",el=>{ c.voz=el.checked; if(el.checked) falar("Olá") });
+    document.querySelectorAll("[data-at]").forEach(el=>el.onchange=()=>{ c.atividades[el.dataset.at]=el.checked; if(!Object.values(c.atividades).some(Boolean)){ c.atividades.palavras=true; toast("Pelo menos uma atividade fica ligada") } else toast("Ajuste salvo"); persist(); render() });
+    document.querySelectorAll("[data-etapa]").forEach(b=>b.onclick=()=>{ c.etapa=+b.dataset.etapa; c.atividades.leitura=true; persist(); render(); toast("Etapa: "+ETAPAS[c.etapa]) });
+    $("#reset1").onclick=()=>{ $("#resetrow").innerHTML=`<span class="small danger"><b>Tem certeza?</b> Não dá para desfazer.</span><button class="btn small" id="reset-no">Cancelar</button><button class="btn small primary" id="reset-yes">Sim, apagar</button>`;
+      $("#reset-no").onclick=render; $("#reset-yes").onclick=()=>{ const cfg=S.config; S=defaultState(); S.config=cfg; buildFila(); rotate(S.pal,cfg.cartoes); persist(); render(); toast("Progresso apagado") } };
+  }
+}
+function setPerfil(p){ const c=S.config; c.perfil=p; c.cartoes=PERFIS[p].cartoes; c.atividades={...PERFIS[p].at} }
+
+/* ---------- voz ---------- */
+let vozPt=null;
+function pickVoice(){ try{ const vs=speechSynthesis.getVoices(); vozPt = vs.find(v=>/pt[-_]BR/i.test(v.lang)) || vs.find(v=>/^pt/i.test(v.lang)) || null }catch(e){} }
+try{ pickVoice(); speechSynthesis.onvoiceschanged=pickVoice }catch(e){}
+function falar(t){ if(!S.config.voz) return; try{ speechSynthesis.cancel(); const u=new SpeechSynthesisUtterance(String(t).toLocaleLowerCase("pt-BR")); u.lang="pt-BR"; if(vozPt) u.voice=vozPt; u.rate=.9; speechSynthesis.speak(u) }catch(e){} }
+
+/* ---------- pontos (SVG) ---------- */
+function rng(seed){ let s=Math.floor(seed*2147483646)+1; return ()=> (s=s*16807%2147483647)/2147483647 }
+function dotsSVG(n, seed=Math.random(), w=100, h=62){
+  const r = n<=3?7.5: n<=6?6.2: n<=10?5.2: n<=15?4.4:3.9, R=rng(seed), pts=[];
+  let tries=0; while(pts.length<n && tries<6000){ tries++; const x=r+2+R()*(w-2*r-4), y=r+2+R()*(h-2*r-4); if(pts.every(p=>(p[0]-x)**2+(p[1]-y)**2 > (2.5*r)**2)) pts.push([x,y]) }
+  return `<svg class="dots-svg" viewBox="0 0 ${w} ${h}" aria-label="${n} pontos" role="img">${pts.map(p=>`<circle cx="${p[0].toFixed(1)}" cy="${p[1].toFixed(1)}" r="${r}" fill="#D0221B"/>`).join("")}</svg>`;
+}
+
+/* ============================================================
+   PLAYER DA SESSÃO
+   ============================================================ */
+let P=null, autoT=null;
+function startSession(only){
+  const acts=buildSession(only);
+  if(!acts.length){ toast("Ligue pelo menos uma atividade em Pais"); return }
+  const flat=[]; acts.forEach((a,ai)=>{ a.slides.forEach((s,si)=>flat.push({...s, ai, first:si===0})); if(a.fim) flat.push({...a.fim, ai}) });
+  P={acts, flat, i:0, done:new Set(), only, t0:Date.now(), counted: sessoesHoje().length < S.config.sessoesDia};
+  persist();
+  document.body.style.overflow="hidden";
+  showSlide();
+}
+function cardClass(){ return "card"+(S.config.cor==="preto"?" black":"") }
+function slideHTML(s){
+  const len = Math.max(3,[...String(s.text||"")].length);
+  switch(s.k){
+    case "palavra": return `<div class="${cardClass()}" id="card" style="--len:${len}"><span class="word">${esc(s.text)}</span></div>`;
+    case "texto": return `<div class="${cardClass()}" id="card" style="--len:${len}"><span class="txt">${esc(s.text)}</span></div>`;
+    case "pontos": return `<div class="card" id="card">${dotsSVG(s.n, s.seed)}</div>`;
+    case "eq": return `<div class="card" id="card"><div class="eq"><div class="box">${dotsSVG(s.a,Math.random(),60,60)}</div><span class="op">${s.op}</span><div class="box">${dotsSVG(s.b,Math.random(),60,60)}</div><span class="op">=</span><div class="box">${dotsSVG(s.r,Math.random(),60,60)}</div></div></div>`;
+    case "bit": { const l=Math.max(4,[...s.text].length); return `<div class="card" id="card" style="--len:${l}"><div class="bit">${s.e?`<span class="em" aria-hidden="true">${s.e}</span>`:""}<span class="nm" style="${s.e?"":"font-size:min(calc(110cqw / var(--len)),26cqh)"}">${esc(s.text)}</span>${s.fatos?`<ul>${s.fatos.map(f=>`<li>${esc(f)}</li>`).join("")}</ul>`:""}</div></div>` }
+    case "sons": { const w=[...s.text].map((c,j)=> s.diff&&s.diff[j]? `<span class="hi">${esc(c)}</span>` : esc(c)).join(""); return `<div class="${cardClass()}" id="card" style="--len:${len}">${s.last?`<span class="tag">Palavra nova</span>`:""}<span class="word">${w}</span></div>` }
+    case "livro": return `<div class="card" id="card" style="--len:${len}"><div class="book ${s.titulo?"title":""}"><span class="pg">${s.titulo?"Minilivro":"Página "+s.pg}</span><span class="bt">${esc(s.text)}</span></div></div>`;
+    case "instr": return `<div class="card" id="card"><div class="instr">${s.dots?`<div class="mini">${dotsSVG(s.dots)}</div>`:""}<span class="big">${esc(s.big)}</span><span class="sub">${esc(s.sub)}</span>${s.extra?`<span class="sub" style="font-size:3.8cqh">Atividade: ${esc(s.extra)}</span>`:""}</div></div>`;
+  }
+  return "";
+}
+function hintHTML(s){
+  const isFlash = ["palavra","texto","pontos","eq","bit"].includes(s.k);
+  if(s.k==="sons" && s.last) return `<span class="say">${s.say}</span>
+     <div class="row" style="justify-content:center"><button class="btn" data-obs="sozinho">Leu sozinho</button><button class="btn" data-obs="ajuda">Leu com ajuda</button><button class="btn" data-obs="nao">Ainda não</button></div>`;
+  if(s.k==="sons") return `<span class="say">${s.say}</span><button class="next" id="nx">Próxima</button>`;
+  if(s.k==="bit" && s.fatos) return `<span class="say">Diga o nome e leia um fato. Depois pergunte: <b>o que mais você sabe?</b></span><button class="next" id="nx">Próximo</button>`;
+  if(s.k==="eq") return `<span class="say">Diga: <b>${esc(s.voice)}</b></span>${S.config.auto?"":`<button class="next" id="nx">Próximo</button>`}`;
+  if(s.k==="pontos") return `<span class="say">Diga: <b>${esc(NUM[s.n])}</b></span>${S.config.auto?"":`<button class="next" id="nx">Próximo</button>`}`;
+  if(isFlash) return S.config.auto? `<span class="say small">Diga a palavra com alegria</span>` : `<span class="say">Diga: <b>${esc(s.voice)}</b> · toque no cartão</span>`;
+  return `<button class="next" id="nx">Continuar</button>`;
+}
+function showSlide(){
+  clearTimeout(autoT);
+  const s=P.flat[P.i], a=P.acts[s.ai];
+  const actIdx=s.ai, total=P.flat.length;
+  if(s.item!==undefined){ countExpo(a, s) }
+  if(a.id==="bits" && s.first){ S.bits.expo[a.cat]=(S.bits.expo[a.cat]||0)+1 }
+  const layer=$("#layer");
+  layer.innerHTML=`<div class="player" role="dialog" aria-label="Sessão de cartões">
+    <div class="pbar">
+      <span class="lbl">${esc(a.nome)}</span>
+      <div class="dots" aria-hidden="true">${P.acts.map((_,j)=>`<i class="${j<=actIdx?"on":""}"></i>`).join("")}</div>
+      <button class="btn small" id="stop">Parar aqui</button>
+    </div>
+    <div class="prog"><i style="width:${Math.round((P.i+1)/total*100)}%"></i></div>
+    <div class="stage">${slideHTML(s)}</div>
+    <div class="hint">${hintHTML(s)}</div>
+  </div>`;
+  $("#stop").onclick=()=>finish(true);
+  const nx=$("#nx"); if(nx) nx.onclick=next;
+  const card=$("#card"); if(card && !(s.k==="sons"&&s.last)) card.onclick=next;
+  layer.querySelectorAll("[data-obs]").forEach(b=>b.onclick=()=>{ S.obs.push({d:hoje(), w:s.text, r:b.dataset.obs, cadeia:s.chain}); next() });
+  if(s.k!=="sons" || !s.last) { if(["palavra","texto","pontos","eq","bit","livro"].includes(s.k) || (s.k==="sons" && !s.last)) falar(s.voice) }
+  const isFlash=["palavra","texto","pontos","eq"].includes(s.k) || (s.k==="bit" && !s.fatos);
+  if(S.config.auto && isFlash && !a.manual) autoT=setTimeout(next, S.config.velocidade + (s.k==="texto"||s.k==="eq"? 900:0));
+}
+function countExpo(a,s){
+  if(a.id==="palavras"){ S.pal.expo[s.item]=(S.pal.expo[s.item]||0)+1 }
+  if(a.id==="pontos"){ S.pts.expo[s.item]=(S.pts.expo[s.item]||0)+1 }
+}
+function next(){
+  const cur=P.flat[P.i];
+  const nxt=P.flat[P.i+1];
+  if(!nxt || nxt.ai!==cur.ai) P.done.add(cur.ai);
+  if(!nxt){ finish(false); return }
+  P.i++; showSlide();
+}
+document.addEventListener("keydown",e=>{ if(!P) return; if(e.key===" "||e.key==="ArrowRight"||e.key==="Enter"){ const s=P.flat[P.i]; if(s && !(s.k==="sons"&&s.last)){ e.preventDefault(); next() } } if(e.key==="Escape") finish(true) });
+
+function finish(parou){
+  clearTimeout(autoT); try{ speechSynthesis.cancel() }catch(e){}
+  const acts=P.done.size, antes=S.estrelas, figAntes=Math.floor(antes/STAR_POR_FIG);
+  let ganho=0, extras=[];
+  if(P.counted && (acts>0 || P.i>0)){
+    ganho += acts*3 + 5;
+    const hj=sessoesHoje().length+1;
+    if(hj===S.config.sessoesDia){ ganho+=10; extras.push("meta do dia +10") }
+  }
+  const seqAntes = sequencia();
+  const reg={d:hoje(), t:Date.now(), a:P.acts.filter((_,i)=>P.done.has(i)).map(a=>a.id==="livro"?"livro":a.id).join(", ")||"início", parou:parou && P.i < P.flat.length-1, dur:Math.round((Date.now()-P.t0)/1000), i:0, n:""};
+  S.sessoes.push(reg);
+  const seqDepois = sequencia();
+  if(P.counted && seqDepois>seqAntes && seqDepois%7===0){ ganho+=15; extras.push(`${seqDepois} dias seguidos +15`) }
+  S.estrelas += ganho;
+  const novaFig = Math.floor(S.estrelas/STAR_POR_FIG) > figAntes && Math.floor(S.estrelas/STAR_POR_FIG)<=FIGURINHAS.length;
+  if(novaFig) lastFig=Math.floor(S.estrelas/STAR_POR_FIG)-1;
+  persist();
+  const nome=S.config.nome||"";
+  const layer=$("#layer");
+  const burst = ganho? range(1,10).map(k=>{ const ang=k/10*Math.PI*2; return `<span style="--x:${Math.cos(ang)*90}px;--y:${Math.sin(ang)*90}px">${STAR}</span>` }).join("") : "";
+  const FACES=[[1,"😣","Recusou"],[2,"🙁","Pouco"],[3,"😐","Ok"],[4,"🙂","Gostou"],[5,"😄","Adorou"]];
+  layer.innerHTML=`<div class="player" role="dialog" aria-label="Fim da sessão" style="overflow:auto">
+    <div class="wrap" style="padding-block:10px 30px">
+    <div class="end">
+      <div class="burst">${burst}<div class="core">${ganho?"+"+ganho:"✓"}</div></div>
+      <h1>${ganho? (parou? "Parar na hora certa também vale!" : "Muito bem"+(nome?", "+esc(nome):"")+"!") : "Brincadeira extra feita!"}</h1>
+      <p class="muted">${ganho? `${ganho} estrelas${extras.length?" · "+extras.join(" · "):""}` : "A meta de hoje já estava cumprida, então esta não soma estrelas."}</p>
+      ${novaFig? `<div class="note good" style="align-items:center"><span style="font-size:2.2rem">${FIGURINHAS[lastFig]}</span><div><b>Figurinha nova no álbum!</b></div></div>`:""}
+      <div class="panel" style="width:100%;text-align:left">
+        <div><p class="eyebrow">Para o adulto</p><h3>Como estava o interesse?</h3></div>
+        <div class="faces" id="faces">${FACES.map(f=>`<button class="face" data-i="${f[0]}" aria-pressed="false"><span class="e">${f[1]}</span><small>${f[2]}</small></button>`).join("")}</div>
+        <label class="f">Anotação (opcional)<textarea id="nota" placeholder="Ex.: apontou a LUA no livro de noite"></textarea></label>
+        <div class="row"><button class="btn primary" id="fim-ok">Salvar e voltar</button></div>
+      </div>
+    </div></div></div>`;
+  let nota=0;
+  $("#faces").querySelectorAll(".face").forEach(b=>b.onclick=()=>{ nota=+b.dataset.i; $("#faces").querySelectorAll(".face").forEach(x=>x.setAttribute("aria-pressed", x===b?"true":"false")) });
+  $("#fim-ok").onclick=()=>{ reg.i=nota; reg.n=$("#nota").value.trim().slice(0,200); persist(); closePlayer(novaFig) };
+  P=null;
+}
+function closePlayer(toAlbum){ $("#layer").innerHTML=""; document.body.style.overflow=""; view= toAlbum? "album":"home"; render(); window.scrollTo(0,0) }
+
+/* ---------- start ---------- */
+render();
+initRemote();
+</script>
+</body>
+</html>
